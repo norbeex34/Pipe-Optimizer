@@ -133,7 +133,7 @@ export default function PipeCuttingOptimizer() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Plan de Corte - MSH Pipe Optimizer</title>
+  <title>Plan de Corte - MSH Tube Optimizer</title>
   <style>
     @page { margin: 2cm; size: A4; }
     body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #1e293b; max-width: 100%; margin: 0; padding: 20px; }
