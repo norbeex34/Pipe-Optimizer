@@ -276,7 +276,7 @@ export default function PipeCuttingOptimizer() {
   </div>
 
   <div class="footer">
-    Generado con MSH Pipe Optimizer
+    Generado con MSH Tube Optimizer
   </div>
 
   <script>
@@ -469,7 +469,7 @@ export default function PipeCuttingOptimizer() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl md:text-6xl font-black mb-4 title-glow" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-            MSH PIPE OPTIMIZER
+            MSH Tube Optimizer
           </h1>
           <p className="text-slate-400 text-lg tracking-wide">
             Sistema de optimización de cortes para caños • Minimiza desperdicios
