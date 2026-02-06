@@ -175,7 +175,7 @@ export default function PipeCuttingOptimizer() {
 <body>
   <div class="header">
     <h1>PLAN DE CORTE DE CAÑOS</h1>
-    <div class="subtitle">Plan de optimización generado por MSH Pipe Optimizer</div>
+    <div class="subtitle">Plan de optimización generado por MSH Tube Optimizer</div>
     <div class="date">Generado el: ${date}</div>
   </div>
 
