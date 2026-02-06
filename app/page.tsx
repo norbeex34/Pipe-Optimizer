@@ -94,6 +94,26 @@ export default function PipeCuttingOptimizer() {
 
   const totalCutsCount = cuts.reduce((sum, cut) => sum + cut.quantity, 0);
 
+  // Función para agrupar caños idénticos
+  const groupIdenticalPipes = (pipes: Array<{cuts: number[]}>) => {
+    const grouped: Array<{cuts: number[], count: number}> = [];
+    
+    pipes.forEach(pipe => {
+      const pipeSignature = pipe.cuts.slice().sort((a, b) => a - b).join(',');
+      const existing = grouped.find(g => 
+        g.cuts.slice().sort((a, b) => a - b).join(',') === pipeSignature
+      );
+      
+      if (existing) {
+        existing.count++;
+      } else {
+        grouped.push({ cuts: pipe.cuts, count: 1 });
+      }
+    });
+    
+    return grouped;
+  };
+
   const exportToPrint = () => {
     if (!optimization) return;
 
@@ -105,6 +125,8 @@ export default function PipeCuttingOptimizer() {
       hour: '2-digit',
       minute: '2-digit'
     });
+
+    const groupedPipes = groupIdenticalPipes(optimization.pipes);
 
     const printContent = `
 <!DOCTYPE html>
@@ -199,22 +221,24 @@ export default function PipeCuttingOptimizer() {
   <div class="pipes-section">
     <h2>🔧 DISTRIBUCIÓN DE CORTES POR CAÑO</h2>
     
-    ${optimization.pipes.map((pipe: any, pipeIndex: number) => {
-      const usedLength = pipe.cuts.reduce((sum: number, cut: number) => sum + cut + optimization.kerf, 0) - optimization.kerf;
+    ${groupedPipes.map((pipeGroup: any, groupIndex: number) => {
+      const usedLength = pipeGroup.cuts.reduce((sum: number, cut: number) => sum + cut + optimization.kerf, 0) - optimization.kerf;
       const wasteLength = stockLength - usedLength;
       const efficiency = ((usedLength / stockLength) * 100).toFixed(1);
       
       return `
         <div class="pipe-card">
           <div class="pipe-header">
-            <div class="pipe-number">CAÑO #${pipeIndex + 1}</div>
+            <div class="pipe-number">
+              ${pipeGroup.count > 1 ? `${pipeGroup.count}× CAÑOS (configuración idéntica)` : `CAÑO ÚNICO`}
+            </div>
             <div class="pipe-stats">
               Usado: ${usedLength}mm | Desperdicio: ${wasteLength}mm | Eficiencia: ${efficiency}%
             </div>
           </div>
           
           <div class="pipe-visual">
-            ${pipe.cuts.map((cut: number) => {
+            ${pipeGroup.cuts.map((cut: number) => {
               const widthPercent = ((cut + optimization.kerf) / stockLength) * 100;
               return `<div class="cut-segment" style="width: ${widthPercent}%">${cut}mm</div>`;
             }).join('')}
@@ -226,9 +250,14 @@ export default function PipeCuttingOptimizer() {
           </div>
           
           <div class="cuts-detail">
-            ${pipe.cuts.map((cut: number, idx: number) => `
+            ${pipeGroup.cuts.map((cut: number, idx: number) => `
               <span class="cut-tag">#${idx + 1}: ${cut}mm</span>
             `).join('')}
+            ${pipeGroup.count > 1 ? `
+              <span class="cut-tag" style="background: #fef3c7; border-color: #fbbf24; color: #92400e;">
+                ⚠️ Repetir ${pipeGroup.count} veces
+              </span>
+            ` : ''}
           </div>
         </div>
       `;
@@ -653,20 +682,31 @@ export default function PipeCuttingOptimizer() {
                     </button>
                   </div>
                   <div className="space-y-6">
-                    {optimization.pipes.map((pipe: any, pipeIndex: number) => {
-                      const usedLength = pipe.cuts.reduce((sum: number, cut: number) => sum + cut + optimization.kerf, 0) - optimization.kerf;
+                    {groupIdenticalPipes(optimization.pipes).map((pipeGroup: any, groupIndex: number) => {
+                      const usedLength = pipeGroup.cuts.reduce((sum: number, cut: number) => sum + cut + optimization.kerf, 0) - optimization.kerf;
                       const wasteLength = stockLength - usedLength;
                       const efficiency = ((usedLength / stockLength) * 100).toFixed(1);
 
                       return (
                         <div 
-                          key={pipeIndex} 
+                          key={groupIndex} 
                           className="animate-slide-in"
-                          style={{ animationDelay: `${pipeIndex * 0.1}s` }}
+                          style={{ animationDelay: `${groupIndex * 0.1}s` }}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-bold text-slate-400">
-                              CAÑO #{pipeIndex + 1}
+                              {pipeGroup.count > 1 ? (
+                                <span className="flex items-center gap-2">
+                                  <span className="bg-sky-500/20 text-sky-300 px-3 py-1 rounded-full font-bold">
+                                    {pipeGroup.count}× CAÑOS
+                                  </span>
+                                  <span className="text-slate-500">
+                                    (configuración idéntica)
+                                  </span>
+                                </span>
+                              ) : (
+                                `CAÑO ÚNICO`
+                              )}
                             </span>
                             <span className="text-xs text-slate-500 font-mono">
                               Usado: {usedLength}mm • Desperdicio: {wasteLength}mm • {efficiency}%
@@ -674,7 +714,7 @@ export default function PipeCuttingOptimizer() {
                           </div>
                           
                           <div className="pipe-visualization h-16 flex">
-                            {pipe.cuts.map((cut: number, cutIndex: number) => {
+                            {pipeGroup.cuts.map((cut: number, cutIndex: number) => {
                               const widthPercent = ((cut + optimization.kerf) / stockLength) * 100;
                               return (
                                 <div
@@ -698,8 +738,8 @@ export default function PipeCuttingOptimizer() {
                           </div>
 
                           {/* Detalle de cortes */}
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {pipe.cuts.map((cut: number, cutIndex: number) => (
+                          <div className="mt-2 flex flex-wrap gap-2 items-center">
+                            {pipeGroup.cuts.map((cut: number, cutIndex: number) => (
                               <span
                                 key={cutIndex}
                                 className="text-xs bg-sky-500/10 text-sky-300 px-2 py-1 rounded border border-sky-500/20 font-mono"
@@ -707,6 +747,11 @@ export default function PipeCuttingOptimizer() {
                                 {cut}mm
                               </span>
                             ))}
+                            {pipeGroup.count > 1 && (
+                              <span className="text-xs text-slate-500 italic">
+                                → Repetir {pipeGroup.count} veces
+                              </span>
+                            )}
                           </div>
                         </div>
                       );
